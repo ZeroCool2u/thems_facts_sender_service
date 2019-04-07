@@ -1,0 +1,11 @@
+runtime: python37
+entrypoint: gunicorn fact_sender:app -k uvicorn.workers.UvicornWorker
+service: fact-sender
+
+handlers:
+- url: ./*
+  secure: always
+  script: auto
+
+inbound_services:
+- warmup
