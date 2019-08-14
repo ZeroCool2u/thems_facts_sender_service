@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 
 from fastapi import FastAPI
@@ -13,16 +14,38 @@ from ujson import loads
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 
-db = firestore.Client()
-api_keys_ref = db.collection(u'api_keys').document(u'gvRhG4XnOHccmty4UoBU')
+if not os.getenv('GAE_ENV', '').startswith('standard'):
+    os.environ[
+        'GOOGLE_APPLICATION_CREDENTIALS'] = r'/home/theo/PycharmProjects/thems_facts/sender_service/facts-sender-owner.json'
 
-try:
-    doc = api_keys_ref.get()
-    API_KEYS = doc.to_dict()
-    logging.info('API Keys successfully retrieved.')
-except NotFound as e:
-    API_KEYS = {}
-    logging.error('The API keys could not be retrieved from Firestore!')
+
+def gcp_support() -> dict:
+    try:
+        import googleclouddebugger
+
+        googleclouddebugger.enable()
+    except ImportError as e:
+        logging.error(f'Unable to import and enable stackdriver debugger: {str(e)}')
+        pass
+
+    try:
+        db = firestore.Client()
+        api_keys_ref = db.collection(u'api_keys').document(u'gvRhG4XnOHccmty4UoBU')
+        doc = api_keys_ref.get()
+        api_keys = doc.to_dict()
+        logging.info('API Keys successfully retrieved.')
+        return api_keys
+    except NotFound as e:
+        api_keys = {'twilio_sid': 'TWILIO_SID_NOT_FOUND'}
+        logging.error(f'The API keys could not be retrieved from Firestore: {str(e)}')
+        return api_keys
+    except Exception as e:
+        api_keys = {'twilio_sid': 'TWILIO_SID_NOT_FOUND'}
+        logging.error(f'Firestore client failed to init. The fact sender service will run in local only mode: {str(e)}')
+        return api_keys
+
+
+API_KEYS = gcp_support()
 
 app = FastAPI(title='Fact Sender',
               description='This is an API that handles constructing and sending SMS messages via'
@@ -35,6 +58,7 @@ class Task(BaseModel):
     target_phone: str
     account_sid: str
     is_first_task: bool
+    task_queue_size: int
 
 
 async def get_random_path() -> str:
@@ -73,11 +97,12 @@ async def send_fact(fact: str, task_payload: Task) -> None:
 
     if task_payload.is_first_task:
         body = 'Hi ' + task_payload.target_name + \
-               ', thanks for signing up for facts! You have signed up for: 3 Years ' \
-               'of facts at a rate of: 1 per hour. As a reminder, there is no way to cancel! ' \
-               'Enjoy your facts! ' + fact
+               ', thanks for signing up for alternative facts! You have signed up for: ' + str(
+            task_payload.task_queue_size) + ' Years ' \
+                                            'of facts at a rate of: 1 per hour. As a reminder, there is no way to cancel! ' \
+                                            'Enjoy your alternative facts! \n ' + fact
     else:
-        body = 'Hi ' + task_payload.target_name + ', enjoy your fact! ' + fact,
+        body = 'Hi ' + task_payload.target_name + ', enjoy your alternative fact! \n ' + fact,
 
     message = client.messages.create(
         body=body,

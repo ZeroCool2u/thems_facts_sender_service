@@ -1,10 +1,9 @@
-starlette
-pydantic
-gunicorn
+fastapi[all]
 uvicorn
-fastapi
+gunicorn
 requests
 ujson
 email_validator
 twilio
 google-cloud-firestore
+google-python-cloud-debugger
