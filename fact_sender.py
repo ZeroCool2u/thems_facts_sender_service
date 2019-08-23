@@ -117,10 +117,14 @@ async def send_sms(task_payload: Task):
 
     if fact:
         await send_fact(fact, task_payload)
+    else:
+        logging.error(f"Failed to retrieve a fact to send. This task will be discarded and fail to execute."
+                      f"Target Name: {task_payload.target_name} Target Number: {task_payload.target_phone} "
+                      f"Fact Type: {task_payload.fact_type}")
 
     return {}
 
 
 @app.get("/_ah/warmup", status_code=HTTP_200_OK, include_in_schema=False)
 def warmup():
-    return {'Response': '200'}
+    return {'Response Code': '418'}
