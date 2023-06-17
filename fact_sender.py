@@ -23,13 +23,6 @@ elif os.getenv('GITHUB_WORKFLOW') is not None:
 
 
 def gcp_support() -> dict:
-    try:
-        import googleclouddebugger
-
-        googleclouddebugger.enable()
-    except ImportError as e:
-        logging.error(f'Unable to import and enable stackdriver debugger: {str(e)}')
-        pass
 
     try:
         db = firestore.Client()

@@ -6,4 +6,3 @@ ujson
 email_validator
 twilio
 google-cloud-firestore
-google-python-cloud-debugger
