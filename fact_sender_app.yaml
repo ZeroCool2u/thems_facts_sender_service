@@ -1,4 +1,4 @@
-runtime: python37
+runtime: python311
 entrypoint: gunicorn -w 2 fact_sender:app -k uvicorn.workers.UvicornWorker
 service: fact-sender
 
