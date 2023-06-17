@@ -1,15 +1,14 @@
 import logging
 import os
 import random
-
 from fastapi import FastAPI
 from google.cloud import firestore
 from google.cloud.exceptions import NotFound
+from orjson import loads
 from pydantic import BaseModel
 from requests import Response, RequestException, get
 from starlette.status import HTTP_200_OK
 from twilio.rest import Client
-from ujson import loads
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
